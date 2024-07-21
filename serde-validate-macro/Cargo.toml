@@ -1,0 +1,20 @@
+[package]
+name = "serde-validate-macro"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+description = "A procedural macro that validates the deserialization of a struct"
+repository = "https://github.com/lucasmdjl/serde-validate"
+keywords = ["deserialization", "validation", "serde"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+proc-macro2 = "1"
+syn = "2"
+
+[dev-dependencies]
+serde_json = "1"

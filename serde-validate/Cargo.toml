@@ -1,0 +1,22 @@
+[package]
+name = "serde-validate"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+readme = "README.md"
+description = "A library for validating deserialized structs and enums"
+repository = "https://github.com/lucasmdjl/serde-validate"
+keywords = ["deserialization", "validation", "serde"]
+
+[dependencies]
+serde-validate-macro = { version = "0.1.0", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+
+[features]
+default = ["macro"]
+macro = ["dep:serde-validate-macro", "dep:serde"]
+
+[dev-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde-validate-macro = "0.1.0"
