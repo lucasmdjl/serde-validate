@@ -46,19 +46,8 @@ name = "serde-validate"
 version = "0.1.0"
 dependencies = [
  "serde",
- "serde-validate-macro 0.1.0",
+ "serde-validate-macro 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json",
-]
-
-[[package]]
-name = "serde-validate-macro"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaf9f3e2fe152680bfe46150996743df6874ae79b8a4d71bb171643362b90b3c"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -68,6 +57,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "serde_json",
+ "syn",
+]
+
+[[package]]
+name = "serde-validate-macro"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7ff465c4e01bf469391a50c32d5d810455660abe50125f9277fda44d13e443d"
+dependencies = [
+ "proc-macro2",
+ "quote",
  "syn",
 ]
 
