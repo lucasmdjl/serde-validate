@@ -16,33 +16,48 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
-
+use serde::Deserialize;
 use serde_validate::Validate;
-use serde_validate::validate_deser;
+use serde_validate_macro::validate_deser;
 
-#[validate_deser]
-struct NonEmptyAndNonNegative(String, i32);
+#[validate_deser] 
+struct NonEmptyAndNonNegative<T: Validate<Error = String>>(String, i32, T);
 
-impl Validate for NonEmptyAndNonNegative {
+impl <T> Validate for NonEmptyAndNonNegative<T> where T: Validate<Error = String> {
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
         if self.0.is_empty() { return Err("name cannot be empty".to_string()) }
         else if self.1 < 0 { return Err("id cannot be negative".to_string()) }
-        else { Ok(()) }
+        else { self.2.validate() }
+    }
+}
+
+
+#[derive(Deserialize)]
+struct True(bool);
+impl Validate for True {
+    type Error = String;
+    fn validate(&self) -> Result<(), Self::Error> {
+        if self.0 { Ok(()) } else { Err("not true".to_string()) }
     }
 }
 
 #[test]
 fn test_deserialize_ok() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("[\"Lucas\", 1]").is_ok());
+    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>("[\"Lucas\", 1, true]").is_ok());
 }
 
 #[test]
 fn test_deserialize_empty() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("[\"\", 1]").is_err());
+    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>("[\"\", 1, true]").is_err());
 }
 
 #[test]
 fn test_deserialize_negative() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("[\"Lucas\", -1]").is_err());
+    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>("[\"Lucas\", -1, true]").is_err());
+}
+
+#[test]
+fn test_deserialize_false() {
+    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>("[\"Lucas\", 1, false]").is_err());
 }
