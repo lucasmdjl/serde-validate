@@ -17,35 +17,42 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde_validate::Validate;
 use serde_validate::validate_deser;
+use serde_validate::Validate;
 
 #[validate_deser]
 enum NonEmptyAndNonNegative {
     String { name: String },
     Int(i32),
-    Null
+    Null,
 }
 
 impl Validate for NonEmptyAndNonNegative {
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
         match self {
-            NonEmptyAndNonNegative::String { name } if name.is_empty() => Err("name cannot be empty".to_string()),
+            NonEmptyAndNonNegative::String { name } if name.is_empty() => {
+                Err("name cannot be empty".to_string())
+            }
             NonEmptyAndNonNegative::Int(i) if *i < 0 => Err("id cannot be negative".to_string()),
-            _ => Ok(())
+            _ => Ok(()),
         }
     }
 }
 
 #[test]
 fn test_deserialize_not_empty() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("{\"String\": {\"name\": \"Lucas\"}}").is_ok());
+    assert!(
+        serde_json::from_str::<NonEmptyAndNonNegative>("{\"String\": {\"name\": \"Lucas\"}}")
+            .is_ok()
+    );
 }
 
 #[test]
 fn test_deserialize_empty() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("{\"String\": {\"name\": \"\"}}").is_err());
+    assert!(
+        serde_json::from_str::<NonEmptyAndNonNegative>("{\"String\": {\"name\": \"\"}}").is_err()
+    );
 }
 
 #[test]

@@ -17,26 +17,36 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::fmt::Display;
 use serde::Deserialize;
-use serde_validate_macro::validate_deser;
 use serde_validate::Validate;
+use serde_validate_macro::validate_deser;
+use std::fmt::Display;
 
 #[validate_deser]
-enum NonEmptyAndNonNegative<T> where T: Validate, T::Error: Display {
+enum NonEmptyAndNonNegative<T>
+where
+    T: Validate,
+    T::Error: Display,
+{
     String { name: String },
     Int(i32),
-    Something(T)
+    Something(T),
 }
 
-impl <T> Validate for NonEmptyAndNonNegative<T> where T: Validate, T::Error: Display {
+impl<T> Validate for NonEmptyAndNonNegative<T>
+where
+    T: Validate,
+    T::Error: Display,
+{
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
         match self {
-            NonEmptyAndNonNegative::String { name } if name.is_empty() => Err("name cannot be empty".to_string()),
+            NonEmptyAndNonNegative::String { name } if name.is_empty() => {
+                Err("name cannot be empty".to_string())
+            }
             NonEmptyAndNonNegative::Int(i) if *i < 0 => Err("id cannot be negative".to_string()),
             NonEmptyAndNonNegative::Something(t) => t.validate().map_err(|e| e.to_string()),
-            _ => Ok(())
+            _ => Ok(()),
         }
     }
 }
@@ -46,19 +56,28 @@ struct True(bool);
 impl Validate for True {
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
-        if self.0 { Ok(()) } else { Err("not true".to_string()) }
+        if self.0 {
+            Ok(())
+        } else {
+            Err("not true".to_string())
+        }
     }
 }
 
-
 #[test]
 fn test_deserialize_not_empty() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>("{\"String\": {\"name\": \"Lucas\"}}").is_ok());
+    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>(
+        "{\"String\": {\"name\": \"Lucas\"}}"
+    )
+    .is_ok());
 }
 
 #[test]
 fn test_deserialize_empty() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>("{\"String\": {\"name\": \"\"}}").is_err());
+    assert!(
+        serde_json::from_str::<NonEmptyAndNonNegative<True>>("{\"String\": {\"name\": \"\"}}")
+            .is_err()
+    );
 }
 
 #[test]
@@ -78,5 +97,7 @@ fn test_deserialize_true() {
 
 #[test]
 fn test_deserialize_false() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative<True>>("{\"Something\": false}").is_err());
+    assert!(
+        serde_json::from_str::<NonEmptyAndNonNegative<True>>("{\"Something\": false}").is_err()
+    );
 }

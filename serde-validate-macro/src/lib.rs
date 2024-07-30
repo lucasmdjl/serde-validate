@@ -23,15 +23,15 @@
 //!
 //! Users should prefer using the `serde-validate` crate.
 
-
 extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
-use syn::{parse_macro_input, DeriveInput, Data, Fields, Field, Index, Variant, Generics, GenericParam};
 use quote::{quote, ToTokens};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-
+use syn::{
+    parse_macro_input, Data, DeriveInput, Field, Fields, GenericParam, Generics, Index, Variant,
+};
 
 /// Attribute serde-validate-macro to derive deserialization with validation for a struct or enum.
 ///
@@ -43,29 +43,42 @@ pub fn validate_deser(_args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     let name = &input.ident;
-    
+
     let generics = &input.generics;
 
     let helper_name = Ident::new(&format!("__ValidDeserialize{name}"), name.span());
 
-    let HelperData { helper_def, init_from_helper } = match input.data {
+    let HelperData {
+        helper_def,
+        init_from_helper,
+    } = match input.data {
         Data::Struct(ref data) => match data.fields {
-            Fields::Named(ref fields) => build_named_struct(&name, &helper_name, &generics, &fields.named),
-            Fields::Unnamed(ref fields) => build_unnamed_struct(&name, &helper_name, &generics, &fields.unnamed),
+            Fields::Named(ref fields) => {
+                build_named_struct(&name, &helper_name, &generics, &fields.named)
+            }
+            Fields::Unnamed(ref fields) => {
+                build_unnamed_struct(&name, &helper_name, &generics, &fields.unnamed)
+            }
             Fields::Unit => build_unit_struct(&name, &helper_name),
-        }
+        },
         Data::Enum(ref data) => build_enum(&name, &helper_name, &generics, &data.variants),
-        Data::Union(_) => {unimplemented!()}
-    };
-    
-    let generic_params = generics.params.to_token_stream();
-    let extra_where_clause: Vec<_> = generics.params.iter().filter_map(|p| match p {
-        GenericParam::Type(p) => {
-            let p = &p.ident;
-            Some(quote! { #p : serde::Deserialize<'__de> })
+        Data::Union(_) => {
+            unimplemented!()
         }
-        _ => None,
-    }).collect();
+    };
+
+    let generic_params = generics.params.to_token_stream();
+    let extra_where_clause: Vec<_> = generics
+        .params
+        .iter()
+        .filter_map(|p| match p {
+            GenericParam::Type(p) => {
+                let p = &p.ident;
+                Some(quote! { #p : serde::Deserialize<'__de> })
+            }
+            _ => None,
+        })
+        .collect();
     let where_clause = match generics.where_clause {
         None => quote! {
             where #(#extra_where_clause,)*
@@ -85,11 +98,11 @@ pub fn validate_deser(_args: TokenStream, input: TokenStream) -> TokenStream {
         GenericParam::Lifetime(p) => {
             let p = &p.lifetime;
             quote! { #p }
-        },
+        }
         GenericParam::Const(p) => {
             let p = &p.ident;
             quote! { #p }
-        },
+        }
     });
 
     let tokens = quote! {
@@ -114,13 +127,17 @@ pub fn validate_deser(_args: TokenStream, input: TokenStream) -> TokenStream {
     tokens.into()
 }
 
-
 struct HelperData {
     helper_def: proc_macro2::TokenStream,
     init_from_helper: proc_macro2::TokenStream,
 }
 
-fn build_named_struct(name: &Ident, helper_name: &Ident, generics: &Generics, fields: &Punctuated<Field, Comma>) -> HelperData {
+fn build_named_struct(
+    name: &Ident,
+    helper_name: &Ident,
+    generics: &Generics,
+    fields: &Punctuated<Field, Comma>,
+) -> HelperData {
     let helper_def = named_def_full(helper_name, generics, fields);
 
     let helper_def = quote! {
@@ -131,11 +148,15 @@ fn build_named_struct(name: &Ident, helper_name: &Ident, generics: &Generics, fi
 
     HelperData {
         helper_def,
-        init_from_helper
+        init_from_helper,
     }
 }
 
-fn named_def_full(name: &Ident, generics: &Generics, fields: &Punctuated<Field, Comma>) -> proc_macro2::TokenStream {
+fn named_def_full(
+    name: &Ident,
+    generics: &Generics,
+    fields: &Punctuated<Field, Comma>,
+) -> proc_macro2::TokenStream {
     let generic_params = generics.params.to_token_stream();
     let where_clause = generics.where_clause.to_token_stream();
     let fields = fields.to_token_stream();
@@ -159,7 +180,12 @@ fn init_from_named(name: &Ident, fields: &Punctuated<Field, Comma>) -> proc_macr
     }
 }
 
-fn build_unnamed_struct(name: &Ident, helper_name: &Ident, generics: &Generics, fields: &Punctuated<Field, Comma>) -> HelperData {
+fn build_unnamed_struct(
+    name: &Ident,
+    helper_name: &Ident,
+    generics: &Generics,
+    fields: &Punctuated<Field, Comma>,
+) -> HelperData {
     let helper_def = unnamed_def_full(helper_name, generics, fields);
 
     let helper_def = quote! {
@@ -170,11 +196,15 @@ fn build_unnamed_struct(name: &Ident, helper_name: &Ident, generics: &Generics, 
 
     HelperData {
         helper_def,
-        init_from_helper
+        init_from_helper,
     }
 }
 
-fn unnamed_def_full(name: &Ident, generics: &Generics, fields: &Punctuated<Field, Comma>) -> proc_macro2::TokenStream {
+fn unnamed_def_full(
+    name: &Ident,
+    generics: &Generics,
+    fields: &Punctuated<Field, Comma>,
+) -> proc_macro2::TokenStream {
     let generic_params = generics.params.to_token_stream();
     let where_clause = generics.where_clause.to_token_stream();
     let fields = fields.to_token_stream();
@@ -205,22 +235,31 @@ fn build_unit_struct(name: &Ident, helper_name: &Ident) -> HelperData {
 
     HelperData {
         helper_def,
-        init_from_helper
+        init_from_helper,
     }
 }
 
-fn build_enum(name: &Ident, helper_name: &Ident, generics: &Generics, variants: &Punctuated<Variant, Comma>) -> HelperData {
+fn build_enum(
+    name: &Ident,
+    helper_name: &Ident,
+    generics: &Generics,
+    variants: &Punctuated<Variant, Comma>,
+) -> HelperData {
     let helper_def = enum_def(helper_name, generics, variants);
 
     let init_from_helper = init_from_enum(name, helper_name, variants);
 
     HelperData {
         helper_def,
-        init_from_helper
+        init_from_helper,
     }
 }
 
-fn enum_def(name: &Ident, generics: &Generics, variants: &Punctuated<Variant, Comma>) -> proc_macro2::TokenStream {
+fn enum_def(
+    name: &Ident,
+    generics: &Generics,
+    variants: &Punctuated<Variant, Comma>,
+) -> proc_macro2::TokenStream {
     let generic_params = generics.params.to_token_stream();
     let where_clause = generics.where_clause.to_token_stream();
     let variants = variants.iter().map(|variant| {
@@ -238,12 +277,20 @@ fn enum_def(name: &Ident, generics: &Generics, variants: &Punctuated<Variant, Co
     }
 }
 
-fn init_from_enum(name: &Ident, helper_name: &Ident, variants: &Punctuated<Variant, Comma>) -> proc_macro2::TokenStream {
+fn init_from_enum(
+    name: &Ident,
+    helper_name: &Ident,
+    variants: &Punctuated<Variant, Comma>,
+) -> proc_macro2::TokenStream {
     let init_variants = variants.iter().map(|variant| {
         let variant_name = &variant.ident;
         match variant.fields {
-            Fields::Named(ref fields) => init_enum_from_named(name, helper_name, variant_name, &fields.named),
-            Fields::Unnamed(ref fields) => init_enum_from_unnamed(name, helper_name, variant_name, &fields.unnamed),
+            Fields::Named(ref fields) => {
+                init_enum_from_named(name, helper_name, variant_name, &fields.named)
+            }
+            Fields::Unnamed(ref fields) => {
+                init_enum_from_unnamed(name, helper_name, variant_name, &fields.unnamed)
+            }
             Fields::Unit => init_enum_from_unit(name, helper_name, variant_name),
         }
     });
@@ -270,12 +317,17 @@ fn unnamed_def(name: &Ident, fields: &Punctuated<Field, Comma>) -> proc_macro2::
     }
 }
 
-fn init_enum_from_named(name: &Ident, helper_name: &Ident, variant_name: &Ident, fields: &Punctuated<Field, Comma>) -> proc_macro2::TokenStream {
+fn init_enum_from_named(
+    name: &Ident,
+    helper_name: &Ident,
+    variant_name: &Ident,
+    fields: &Punctuated<Field, Comma>,
+) -> proc_macro2::TokenStream {
     let fields = fields.iter().map(|field| {
         let name = &field.ident;
         quote! { #name }
     });
-    
+
     let fields_clone = fields.clone();
 
     quote! {
@@ -283,21 +335,30 @@ fn init_enum_from_named(name: &Ident, helper_name: &Ident, variant_name: &Ident,
     }
 }
 
-fn init_enum_from_unnamed(name: &Ident, helper_name: &Ident, variant_name: &Ident, fields: &Punctuated<Field, Comma>) -> proc_macro2::TokenStream {
+fn init_enum_from_unnamed(
+    name: &Ident,
+    helper_name: &Ident,
+    variant_name: &Ident,
+    fields: &Punctuated<Field, Comma>,
+) -> proc_macro2::TokenStream {
     let fields = fields.iter().enumerate().map(|(i, _)| {
         let index = Index::from(i);
         let name = Ident::new(&format!("value_{}", i), index.span);
         quote! { #name }
     });
-    
+
     let fields_clone = fields.clone();
-    
+
     quote! {
         #helper_name::#variant_name( #( #fields ),* ) => #name::#variant_name( #( #fields_clone ),* )
     }
 }
 
-fn init_enum_from_unit(name: &Ident, helper_name: &Ident, variant_name: &Ident) -> proc_macro2::TokenStream {
+fn init_enum_from_unit(
+    name: &Ident,
+    helper_name: &Ident,
+    variant_name: &Ident,
+) -> proc_macro2::TokenStream {
     quote! {
         #helper_name::#variant_name => #name::#variant_name
     }

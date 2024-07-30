@@ -20,25 +20,35 @@ use serde::Deserialize;
 use serde_validate::Validate;
 use serde_validate_macro::validate_deser;
 
-#[validate_deser] 
+#[validate_deser]
 struct NonEmptyAndNonNegative<T: Validate<Error = String>>(String, i32, T);
 
-impl <T> Validate for NonEmptyAndNonNegative<T> where T: Validate<Error = String> {
+impl<T> Validate for NonEmptyAndNonNegative<T>
+where
+    T: Validate<Error = String>,
+{
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
-        if self.0.is_empty() { return Err("name cannot be empty".to_string()) }
-        else if self.1 < 0 { return Err("id cannot be negative".to_string()) }
-        else { self.2.validate() }
+        if self.0.is_empty() {
+            return Err("name cannot be empty".to_string());
+        } else if self.1 < 0 {
+            return Err("id cannot be negative".to_string());
+        } else {
+            self.2.validate()
+        }
     }
 }
-
 
 #[derive(Deserialize)]
 struct True(bool);
 impl Validate for True {
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
-        if self.0 { Ok(()) } else { Err("not true".to_string()) }
+        if self.0 {
+            Ok(())
+        } else {
+            Err("not true".to_string())
+        }
     }
 }
 

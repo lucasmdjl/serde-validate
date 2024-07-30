@@ -17,8 +17,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde_validate::Validate;
 use serde_validate::validate_deser;
+use serde_validate::Validate;
 
 #[validate_deser]
 struct NonEmptyAndNonNegative {
@@ -29,23 +29,34 @@ struct NonEmptyAndNonNegative {
 impl Validate for NonEmptyAndNonNegative {
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
-        if self.name.is_empty() { Err("name cannot be empty".to_string()) }
-        else if self.id < 0 { Err("id cannot be negative".to_string()) }
-        else { Ok(()) }
+        if self.name.is_empty() {
+            Err("name cannot be empty".to_string())
+        } else if self.id < 0 {
+            Err("id cannot be negative".to_string())
+        } else {
+            Ok(())
+        }
     }
 }
 
 #[test]
 fn test_deserialize_ok() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("{ \"name\": \"Lucas\", \"id\": 1}").is_ok());
+    assert!(
+        serde_json::from_str::<NonEmptyAndNonNegative>("{ \"name\": \"Lucas\", \"id\": 1}").is_ok()
+    );
 }
 
 #[test]
 fn test_deserialize_empty() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("{ \"name\": \"\", \"id\": 1}").is_err());
+    assert!(
+        serde_json::from_str::<NonEmptyAndNonNegative>("{ \"name\": \"\", \"id\": 1}").is_err()
+    );
 }
 
 #[test]
 fn test_deserialize_negative() {
-    assert!(serde_json::from_str::<NonEmptyAndNonNegative>("{ \"name\": \"Lucas\", \"id\": -1}").is_err());
+    assert!(
+        serde_json::from_str::<NonEmptyAndNonNegative>("{ \"name\": \"Lucas\", \"id\": -1}")
+            .is_err()
+    );
 }

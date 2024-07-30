@@ -17,8 +17,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde_validate::Validate;
 use serde_validate::validate_deser;
+use serde_validate::Validate;
 
 #[validate_deser]
 struct NonEmptyAndNonNegative(String, i32);
@@ -26,9 +26,13 @@ struct NonEmptyAndNonNegative(String, i32);
 impl Validate for NonEmptyAndNonNegative {
     type Error = String;
     fn validate(&self) -> Result<(), Self::Error> {
-        if self.0.is_empty() { return Err("name cannot be empty".to_string()) }
-        else if self.1 < 0 { return Err("id cannot be negative".to_string()) }
-        else { Ok(()) }
+        if self.0.is_empty() {
+            return Err("name cannot be empty".to_string());
+        } else if self.1 < 0 {
+            return Err("id cannot be negative".to_string());
+        } else {
+            Ok(())
+        }
     }
 }
 
